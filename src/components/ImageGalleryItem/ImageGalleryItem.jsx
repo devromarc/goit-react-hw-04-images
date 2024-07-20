@@ -1,55 +1,56 @@
-import React, { Component } from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import Modal from '../Modal/Modal';
+import { Modal } from '../Modal/Modal';
 import styles from './ImageGalleryItem.module.css';
 
-class ImageGalleryItem extends Component {
-  static propTypes = {
-    image: PropTypes.shape({
-      webformatURL: PropTypes.string.isRequired,
-      largeImageURL: PropTypes.string.isRequired,
-      tags: PropTypes.string,
-    }).isRequired,
-  };
+export const ImageGalleryItem = ({ image }) => {
+  const { webformatURL, largeImageURL, tags } = image;
 
-  state = {
-    showModal: false,
-  };
+  const [showModal, setShowModal] = useState(false);
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.showModal !== this.state.showModal) {
-      const gallery = document.querySelector('.js-gallery');
+  useEffect(() => {
+    const gallery = document.querySelector('.js-gallery');
+
+    const handleGalleryPointerEvents = () => {
       if (!gallery) return;
 
-      if (this.state.showModal) {
+      if (showModal) {
         console.log('Modal is now shown');
         gallery.style.pointerEvents = 'none';
       } else {
         console.log('Modal is now hidden');
         gallery.style.pointerEvents = 'auto';
       }
-    }
-  }
+    };
 
-  toggleModal = () => {
-    this.setState(prevState => ({
-      showModal: !prevState.showModal,
-    }));
+    handleGalleryPointerEvents();
+
+    // Cleanup function to restore pointer events on component unmount or when showModal changes
+    return () => {
+      if (gallery) {
+        gallery.style.pointerEvents = 'auto';
+      }
+    };
+  }, [showModal]);
+
+  const toggleModal = () => {
+    setShowModal(prevShowModal => !prevShowModal);
   };
 
-  render() {
-    const { webformatURL, largeImageURL, tags } = this.props.image;
-    const { showModal } = this.state;
+  return (
+    <li className={styles.galleryItem} onClick={toggleModal}>
+      <img src={webformatURL} alt={tags} />
+      {showModal && (
+        <Modal image={largeImageURL} tags={tags} onClose={toggleModal} />
+      )}
+    </li>
+  );
+};
 
-    return (
-      <li className={styles.galleryItem} onClick={this.toggleModal}>
-        <img src={webformatURL} alt={tags} />
-        {showModal && (
-          <Modal image={largeImageURL} tags={tags} onClose={this.toggleModal} />
-        )}
-      </li>
-    );
-  }
-}
-
-export default ImageGalleryItem;
+ImageGalleryItem.propTypes = {
+  image: PropTypes.shape({
+    webformatURL: PropTypes.string.isRequired,
+    largeImageURL: PropTypes.string.isRequired,
+    tags: PropTypes.string,
+  }).isRequired,
+};
